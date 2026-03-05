@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📸 WA Image Relay</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 8px; }
+  .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 24px; }
+  
+  /* Status */
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+  }
+  .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #f44;
+  }
+  .status-dot.connected { background: #4f4; }
+  
+  /* QR Code */
+  #qr-container {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+  #qr-container img { display: block; width: 280px; height: 280px; }
+  
+  /* Upload area */
+  .upload-area {
+    width: 100%;
+    max-width: 500px;
+    border: 2px dashed #444;
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .upload-area:hover, .upload-area.dragover {
+    border-color: #25D366;
+    background: rgba(37, 211, 102, 0.05);
+  }
+  .upload-area.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  .upload-icon { font-size: 3rem; margin-bottom: 12px; }
+  .upload-text { color: #aaa; font-size: 0.9rem; }
+  input[type="file"] { display: none; }
+  
+  /* Caption */
+  .caption-input {
+    width: 100%;
+    max-width: 500px;
+    padding: 12px 16px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  .caption-input:focus { border-color: #25D366; }
+  
+  /* Preview */
+  .preview {
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .preview img, .preview video {
+    width: 100%;
+    border-radius: 12px;
+    max-height: 400px;
+    object-fit: contain;
+    background: #111;
+  }
+  .preview .file-name {
+    padding: 12px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    text-align: center;
+    color: #aaa;
+  }
+  
+  /* Button */
+  .send-btn {
+    width: 100%;
+    max-width: 500px;
+    padding: 14px;
+    background: #25D366;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: none;
+  }
+  .send-btn:hover { background: #1da851; }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 100;
+  }
+  .toast.success { background: #25D366; color: white; }
+  .toast.error { background: #f44; color: white; }
+  .toast.show { opacity: 1; }
+
+  /* History */
+  .history {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 24px;
+  }
+  .history h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .history-item img {
+    width: 48px; height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  .history-item .info { flex: 1; }
+  .history-item .info .name { font-size: 0.85rem; }
+  .history-item .info .time { font-size: 0.75rem; color: #666; }
+  .history-item .check { color: #25D366; font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<h1>📸 WA Image Relay</h1>
+<p class="subtitle">Upload de imagem → direto pro seu WhatsApp</p>
+
+<div class="status">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Verificando...</span>
+</div>
+
+<div id="qr-container" style="display:none">
+  <img id="qrImg" src="" alt="QR Code">
+</div>
+
+<div class="upload-area disabled" id="uploadArea">
+  <div class="upload-icon">📷</div>
+  <div class="upload-text">Arraste, clique ou cole (Ctrl+V) uma imagem</div>
+  <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx,.zip">
+</div>
+
+<input type="text" class="caption-input" id="captionInput" placeholder="Legenda (opcional)">
+
+<div class="preview" id="preview"></div>
+
+<button class="send-btn" id="sendBtn">📤 Enviar pro WhatsApp</button>
+
+<div class="history" id="history" style="display:none">
+  <h3>Enviados</h3>
+  <div id="historyList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const uploadArea = document.getElementById('uploadArea')
+const fileInput = document.getElementById('fileInput')
+const preview = document.getElementById('preview')
+const sendBtn = document.getElementById('sendBtn')
+const captionInput = document.getElementById('captionInput')
+const statusDot = document.getElementById('statusDot')
+const statusText = document.getElementById('statusText')
+const qrContainer = document.getElementById('qr-container')
+const qrImg = document.getElementById('qrImg')
+const historyDiv = document.getElementById('history')
+const historyList = document.getElementById('historyList')
+
+let selectedFile = null
+let connected = false
+
+// Poll status
+async function checkStatus() {
+  try {
+    const res = await fetch('/api/status')
+    const data = await res.json()
+    connected = data.connected
+    
+    statusDot.className = `status-dot ${connected ? 'connected' : ''}`
+    statusText.textContent = connected 
+      ? `Conectado: ${data.jid?.split('@')[0] || '?'}` 
+      : 'Aguardando conexão...'
+    
+    uploadArea.classList.toggle('disabled', !connected)
+    
+    if (!connected && data.qr) {
+      qrContainer.style.display = 'block'
+      qrImg.src = data.qr
+    } else {
+      qrContainer.style.display = 'none'
+    }
+  } catch (e) {
+    statusText.textContent = 'Servidor offline'
+  }
+}
+
+setInterval(checkStatus, 2000)
+checkStatus()
+
+// Upload area
+uploadArea.addEventListener('click', () => fileInput.click())
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover') })
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'))
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault()
+  uploadArea.classList.remove('dragover')
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0])
+})
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]) })
+
+// Paste support (Ctrl+V / Cmd+V)
+document.addEventListener('paste', e => {
+  if (!connected) return
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.kind === 'file') {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) handleFile(file)
+      return
+    }
+  }
+})
+
+function handleFile(file) {
+  selectedFile = file
+  preview.style.display = 'block'
+  sendBtn.style.display = 'block'
+  
+  if (file.type.startsWith('image/')) {
+    preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="preview">`
+  } else if (file.type.startsWith('video/')) {
+    preview.innerHTML = `<video src="${URL.createObjectURL(file)}" controls></video>`
+  } else {
+    preview.innerHTML = `<div class="file-name">📄 ${file.name} (${(file.size/1024).toFixed(0)}KB)</div>`
+  }
+}
+
+// Send
+sendBtn.addEventListener('click', async () => {
+  if (!selectedFile || !connected) return
+  
+  sendBtn.disabled = true
+  sendBtn.textContent = '⏳ Enviando...'
+  
+  const form = new FormData()
+  form.append('image', selectedFile)
+  form.append('caption', captionInput.value)
+  
+  try {
+    const res = await fetch('/api/send', { method: 'POST', body: form })
+    const data = await res.json()
+    
+    if (data.success) {
+      showToast('✅ Enviado!', 'success')
+      addHistory(selectedFile)
+      selectedFile = null
+      preview.style.display = 'none'
+      sendBtn.style.display = 'none'
+      captionInput.value = ''
+      fileInput.value = ''
+    } else {
+      showToast(`❌ ${data.error}`, 'error')
+    }
+  } catch (e) {
+    showToast(`❌ ${e.message}`, 'error')
+  }
+  
+  sendBtn.disabled = false
+  sendBtn.textContent = '📤 Enviar pro WhatsApp'
+})
+
+function addHistory(file) {
+  historyDiv.style.display = 'block'
+  const item = document.createElement('div')
+  item.className = 'history-item'
+  
+  const thumb = file.type.startsWith('image/') 
+    ? `<img src="${URL.createObjectURL(file)}" alt="">` 
+    : '<div style="width:48px;height:48px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center">📄</div>'
+  
+  item.innerHTML = `
+    ${thumb}
+    <div class="info">
+      <div class="name">${file.name}</div>
+      <div class="time">${new Date().toLocaleTimeString('pt-BR')}</div>
+    </div>
+    <div class="check">✓</div>
+  `
+  historyList.prepend(item)
+}
+
+function showToast(msg, type) {
+  const toast = document.getElementById('toast')
+  toast.textContent = msg
+  toast.className = `toast ${type} show`
+  setTimeout(() => toast.classList.remove('show'), 3000)
+}
+</script>
+</body>
+</html>
