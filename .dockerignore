@@ -1,0 +1,7 @@
+.git
+node_modules
+auth
+uploads
+*.log
+.env
+.dockerignore

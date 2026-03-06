@@ -1,46 +1,58 @@
-# WA Image Relay
+# 📸 WA Image Relay
 
-Upload de imagens/vídeos/arquivos via web que envia direto pro WhatsApp.
+Web page with drag-and-drop / paste (Ctrl+V) image upload that sends files directly to your own WhatsApp (self-chat) via [Baileys](https://github.com/WhiskeySockets/Baileys).
+
+![Dark mode UI](https://img.shields.io/badge/UI-dark%20mode-1a1a1a) ![Node.js](https://img.shields.io/badge/Node.js-22-green) ![Docker](https://img.shields.io/badge/Docker-ready-blue)
 
 ## Features
 
-- 📸 Drag & drop de arquivos
-- 📋 Paste (Ctrl+V) de imagens do clipboard
-- 👀 Preview antes de enviar
-- 💬 Legenda opcional
-- 📜 Histórico de envios na sessão
-- 🌙 Dark mode
-- 📦 Aceita imagem, vídeo e arquivos até 50MB
+- 📷 Drag-and-drop, click, or paste (Ctrl+V) to upload
+- 🖼️ Image, video, and file support (up to 50MB)
+- 💬 Optional caption
+- 📱 QR code pairing (scan with WhatsApp)
+- 🌙 Dark mode UI
+- 📜 Send history
+- 🐳 Docker Compose ready
 
-## Stack
+## Quick Start with Docker
 
-- **Express** — HTTP server
-- **Baileys** — WhatsApp Web API (não-oficial)
-- **Multer** — Upload handling
-- **QRCode** — QR code generation para pareamento
-- **Sharp** — Image processing
+```bash
+docker-compose up -d
+```
 
-## Setup
+Open `http://localhost:8087` and scan the QR code with WhatsApp.
+
+## Quick Start without Docker
 
 ```bash
 npm install
 node server.mjs
 ```
 
-Na primeira execução, acesse `http://localhost:8087` e escaneie o QR code com o WhatsApp.
+Open `http://localhost:8087` and scan the QR code.
 
-A sessão fica salva em `auth/` — nas próximas vezes conecta automaticamente.
+## How It Works
 
-## Uso
+1. Start the server → QR code appears on the web page
+2. Scan the QR with WhatsApp (Menu ⋮ → Linked Devices → Link a Device)
+3. Upload images/videos/files → they get sent to your own WhatsApp chat
+4. Access them from any device where you're logged into WhatsApp
 
-1. Abra a URL no browser
-2. Arraste um arquivo ou cole uma imagem (Ctrl+V)
-3. Opcionalmente adicione uma legenda
-4. Clique em enviar
-5. O arquivo aparece na conversa consigo mesmo no WhatsApp
+## Tech Stack
 
-## Config
+- **Backend:** Express + [Baileys](https://github.com/WhiskeySockets/Baileys) (WhatsApp Web API)
+- **Frontend:** Vanilla HTML/CSS/JS (single file)
+- **Upload:** Multer (50MB limit)
+- **QR:** qrcode (generates QR as data URL)
 
-- Porta padrão: `8087`
-- Envia para o próprio número (self-chat)
-- Limite de upload: 50MB
+## Configuration
+
+| Env Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8087` | Server port (not yet configurable, edit `server.mjs`) |
+
+## Notes
+
+- WhatsApp session is stored in `auth/` directory (Docker volume `wa-auth`)
+- Session may expire — if disconnected, restart and scan QR again
+- This is for personal use — sends to your own number only
