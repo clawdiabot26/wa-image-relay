@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📸 WA Image Relay</title>
+<title>📎 WA File Relay</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -173,8 +173,8 @@
 </head>
 <body>
 
-<h1>📸 WA Image Relay</h1>
-<p class="subtitle">Upload de imagem → direto pro seu WhatsApp</p>
+<h1>📎 WA File Relay</h1>
+<p class="subtitle">Upload de qualquer arquivo → direto pro seu WhatsApp</p>
 
 <div class="status">
   <div class="status-dot" id="statusDot"></div>
@@ -186,9 +186,9 @@
 </div>
 
 <div class="upload-area disabled" id="uploadArea">
-  <div class="upload-icon">📷</div>
-  <div class="upload-text">Arraste, clique ou cole (Ctrl+V) uma imagem</div>
-  <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx,.zip">
+  <div class="upload-icon">📎</div>
+  <div class="upload-text">Arraste, clique ou cole (Ctrl+V) qualquer arquivo</div>
+  <input type="file" id="fileInput">
 </div>
 
 <input type="text" class="caption-input" id="captionInput" placeholder="Legenda (opcional)">
@@ -274,6 +274,24 @@ document.addEventListener('paste', e => {
   }
 })
 
+function getFileIcon(type, name) {
+  if (type.startsWith('image/')) return '🖼️'
+  if (type.startsWith('video/')) return '🎬'
+  if (type.startsWith('audio/')) return '🎵'
+  if (type === 'application/pdf') return '📕'
+  if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gz')) return '📦'
+  if (type.includes('word') || name?.endsWith('.doc') || name?.endsWith('.docx')) return '📝'
+  if (type.includes('sheet') || type.includes('excel') || name?.endsWith('.xls') || name?.endsWith('.xlsx')) return '📊'
+  if (type.includes('presentation') || name?.endsWith('.ppt') || name?.endsWith('.pptx')) return '📽️'
+  return '📄'
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
 function handleFile(file) {
   selectedFile = file
   preview.style.display = 'block'
@@ -283,8 +301,10 @@ function handleFile(file) {
     preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="preview">`
   } else if (file.type.startsWith('video/')) {
     preview.innerHTML = `<video src="${URL.createObjectURL(file)}" controls></video>`
+  } else if (file.type.startsWith('audio/')) {
+    preview.innerHTML = `<div class="file-name">${getFileIcon(file.type, file.name)} ${file.name}<br><small style="color:#666">${formatSize(file.size)}</small><br><audio src="${URL.createObjectURL(file)}" controls style="margin-top:8px;width:100%"></audio></div>`
   } else {
-    preview.innerHTML = `<div class="file-name">📄 ${file.name} (${(file.size/1024).toFixed(0)}KB)</div>`
+    preview.innerHTML = `<div class="file-name">${getFileIcon(file.type, file.name)} ${file.name}<br><small style="color:#666">${formatSize(file.size)}</small></div>`
   }
 }
 
@@ -296,7 +316,7 @@ sendBtn.addEventListener('click', async () => {
   sendBtn.textContent = '⏳ Enviando...'
   
   const form = new FormData()
-  form.append('image', selectedFile)
+  form.append('file', selectedFile)
   form.append('caption', captionInput.value)
   
   try {
@@ -329,7 +349,7 @@ function addHistory(file) {
   
   const thumb = file.type.startsWith('image/') 
     ? `<img src="${URL.createObjectURL(file)}" alt="">` 
-    : '<div style="width:48px;height:48px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center">📄</div>'
+    : `<div style="width:48px;height:48px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">${getFileIcon(file.type, file.name)}</div>`
   
   item.innerHTML = `
     ${thumb}

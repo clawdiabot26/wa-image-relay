@@ -35,8 +35,8 @@ app.get('/api/status', (req, res) => {
   })
 })
 
-// API: Upload image
-app.post('/api/send', upload.single('image'), async (req, res) => {
+// API: Upload file (any type)
+app.post('/api/send', upload.single('file'), async (req, res) => {
   if (!isConnected || !sock || !myJid) {
     return res.status(503).json({ error: 'WhatsApp not connected' })
   }
@@ -55,6 +55,8 @@ app.post('/api/send', upload.single('image'), async (req, res) => {
       message = { image: buffer, caption: caption || undefined, mimetype: mime }
     } else if (mime.startsWith('video/')) {
       message = { video: buffer, caption: caption || undefined, mimetype: mime }
+    } else if (mime.startsWith('audio/')) {
+      message = { audio: buffer, mimetype: mime, ptt: false }
     } else {
       message = { 
         document: buffer, 
