@@ -209,6 +209,10 @@ async function startWhatsApp() {
     printQRInTerminal: true,
     browser: ['WA File Relay', 'Chrome', '120.0'],
     generateHighQualityLinkPreview: false,
+    syncFullHistory: false,
+    shouldSyncHistoryMessage: () => false,
+    markOnlineOnConnect: false,
+    fireInitQueries: false,
   })
 
   sock.ev.on('creds.update', saveCreds)
