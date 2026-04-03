@@ -217,6 +217,22 @@ async function startWhatsApp() {
 
   sock.ev.on('creds.update', saveCreds)
 
+  // Ignorar TUDO que não seja conexão — não precisamos de mensagens, grupos, contatos
+  sock.ev.on('messaging-history.set', () => { /* ignore */ })
+  sock.ev.on('messages.upsert', () => { /* ignore */ })
+  sock.ev.on('messages.update', () => { /* ignore */ })
+  sock.ev.on('message-receipt.update', () => { /* ignore */ })
+  sock.ev.on('groups.upsert', () => { /* ignore */ })
+  sock.ev.on('groups.update', () => { /* ignore */ })
+  sock.ev.on('contacts.upsert', () => { /* ignore */ })
+  sock.ev.on('contacts.update', () => { /* ignore */ })
+  sock.ev.on('chats.upsert', () => { /* ignore */ })
+  sock.ev.on('chats.update', () => { /* ignore */ })
+  sock.ev.on('chats.delete', () => { /* ignore */ })
+  sock.ev.on('presence.update', () => { /* ignore */ })
+  sock.ev.on('blocklist.set', () => { /* ignore */ })
+  sock.ev.on('blocklist.update', () => { /* ignore */ })
+
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update
     
