@@ -18,7 +18,67 @@
   }
   h1 { font-size: 1.5rem; margin-bottom: 8px; }
   .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 24px; }
-  
+
+  /* Auth screen */
+  .auth-screen {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 60px;
+    text-align: center;
+  }
+  .auth-screen .lock-icon { font-size: 4rem; margin-bottom: 16px; }
+  .auth-screen h2 { font-size: 1.3rem; margin-bottom: 8px; }
+  .auth-screen p { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+  .auth-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: #e0e0e0;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  .auth-input:focus { border-color: #25D366; }
+  .auth-btn {
+    width: 100%;
+    padding: 14px;
+    background: #25D366;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+  .auth-btn:hover { background: #1da851; }
+  .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-error {
+    color: #f44;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    min-height: 20px;
+  }
+  .logout-btn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: 1px solid #333;
+    color: #888;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover { border-color: #f44; color: #f44; }
+
   /* Status */
   .status {
     display: flex;
@@ -36,7 +96,7 @@
     background: #f44;
   }
   .status-dot.connected { background: #4f4; }
-  
+
   /* QR Code */
   #qr-container {
     background: white;
@@ -45,7 +105,7 @@
     margin-bottom: 24px;
   }
   #qr-container img { display: block; width: 280px; height: 280px; }
-  
+
   /* Upload area */
   .upload-area {
     width: 100%;
@@ -70,7 +130,7 @@
   .upload-icon { font-size: 3rem; margin-bottom: 12px; }
   .upload-text { color: #aaa; font-size: 0.9rem; }
   input[type="file"] { display: none; }
-  
+
   /* Caption */
   .caption-input {
     width: 100%;
@@ -85,7 +145,7 @@
     outline: none;
   }
   .caption-input:focus { border-color: #25D366; }
-  
+
   /* Preview */
   .preview {
     width: 100%;
@@ -107,7 +167,7 @@
     text-align: center;
     color: #aaa;
   }
-  
+
   /* Button */
   .send-btn {
     width: 100%;
@@ -125,7 +185,7 @@
   }
   .send-btn:hover { background: #1da851; }
   .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  
+
   /* Toast */
   .toast {
     position: fixed;
@@ -169,42 +229,168 @@
   .history-item .info .name { font-size: 0.85rem; }
   .history-item .info .time { font-size: 0.75rem; color: #666; }
   .history-item .check { color: #25D366; font-size: 1.2rem; }
+
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<h1>📎 WA File Relay</h1>
-<p class="subtitle">Upload de qualquer arquivo → direto pro seu WhatsApp</p>
+<!-- AUTH: Setup / Login -->
+<div id="authScreen" class="auth-screen hidden">
+  <!-- Setup (first time) -->
+  <div id="setupView" class="hidden">
+    <div class="lock-icon">🔐</div>
+    <h2>Definir Senha</h2>
+    <p>Primeira vez? Crie uma senha para proteger o acesso.</p>
+    <input type="password" class="auth-input" id="setupPass" placeholder="Nova senha" autofocus>
+    <input type="password" class="auth-input" id="setupPassConfirm" placeholder="Confirmar senha">
+    <button class="auth-btn" id="setupBtn">Definir Senha</button>
+    <div class="auth-error" id="setupError"></div>
+  </div>
 
-<div class="status">
-  <div class="status-dot" id="statusDot"></div>
-  <span id="statusText">Verificando...</span>
+  <!-- Login -->
+  <div id="loginView" class="hidden">
+    <div class="lock-icon">🔒</div>
+    <h2>WA File Relay</h2>
+    <p>Digite a senha para acessar</p>
+    <input type="password" class="auth-input" id="loginPass" placeholder="Senha" autofocus>
+    <button class="auth-btn" id="loginBtn">Entrar</button>
+    <div class="auth-error" id="loginError"></div>
+  </div>
 </div>
 
-<div id="qr-container" style="display:none">
-  <img id="qrImg" src="" alt="QR Code">
-</div>
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden">
+  <button class="logout-btn" id="logoutBtn">Sair</button>
 
-<div class="upload-area disabled" id="uploadArea">
-  <div class="upload-icon">📎</div>
-  <div class="upload-text">Arraste, clique ou cole (Ctrl+V) qualquer arquivo</div>
-  <input type="file" id="fileInput">
-</div>
+  <h1>📎 WA File Relay</h1>
+  <p class="subtitle">Upload de qualquer arquivo → direto pro seu WhatsApp</p>
 
-<input type="text" class="caption-input" id="captionInput" placeholder="Legenda (opcional)">
+  <div class="status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Verificando...</span>
+  </div>
 
-<div class="preview" id="preview"></div>
+  <div id="qr-container" style="display:none">
+    <img id="qrImg" src="" alt="QR Code">
+  </div>
 
-<button class="send-btn" id="sendBtn">📤 Enviar pro WhatsApp</button>
+  <div class="upload-area disabled" id="uploadArea">
+    <div class="upload-icon">📎</div>
+    <div class="upload-text">Arraste, clique ou cole (Ctrl+V) qualquer arquivo</div>
+    <input type="file" id="fileInput">
+  </div>
 
-<div class="history" id="history" style="display:none">
-  <h3>Enviados</h3>
-  <div id="historyList"></div>
+  <input type="text" class="caption-input" id="captionInput" placeholder="Legenda (opcional)">
+
+  <div class="preview" id="preview"></div>
+
+  <button class="send-btn" id="sendBtn">📤 Enviar pro WhatsApp</button>
+
+  <div class="history" id="history" style="display:none">
+    <h3>Enviados</h3>
+    <div id="historyList"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ─── Auth state ─────────────────────────────────────
+let sessionToken = localStorage.getItem('wa_relay_token')
+
+function authHeaders() {
+  return sessionToken ? { 'X-Session-Token': sessionToken } : {}
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/auth/status', { headers: authHeaders() })
+    const data = await res.json()
+
+    if (!data.hasPassword) {
+      showScreen('setup')
+    } else if (!data.authenticated) {
+      showScreen('login')
+    } else {
+      showScreen('app')
+    }
+  } catch {
+    showScreen('login')
+  }
+}
+
+function showScreen(screen) {
+  document.getElementById('authScreen').classList.toggle('hidden', screen === 'app')
+  document.getElementById('setupView').classList.toggle('hidden', screen !== 'setup')
+  document.getElementById('loginView').classList.toggle('hidden', screen !== 'login')
+  document.getElementById('mainApp').classList.toggle('hidden', screen !== 'app')
+
+  if (screen === 'setup') document.getElementById('setupPass').focus()
+  if (screen === 'login') document.getElementById('loginPass').focus()
+}
+
+// Setup password
+document.getElementById('setupBtn').addEventListener('click', async () => {
+  const pass = document.getElementById('setupPass').value
+  const confirm = document.getElementById('setupPassConfirm').value
+  const err = document.getElementById('setupError')
+
+  if (pass.length < 4) { err.textContent = 'Mínimo 4 caracteres'; return }
+  if (pass !== confirm) { err.textContent = 'Senhas não coincidem'; return }
+
+  const res = await fetch('/api/auth/setup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass })
+  })
+  const data = await res.json()
+  if (data.token) {
+    sessionToken = data.token
+    localStorage.setItem('wa_relay_token', sessionToken)
+    showScreen('app')
+    startApp()
+  } else {
+    err.textContent = data.error || 'Erro'
+  }
+})
+
+// Login
+document.getElementById('loginBtn').addEventListener('click', doLogin)
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+document.getElementById('setupPassConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('setupBtn').click() })
+
+async function doLogin() {
+  const pass = document.getElementById('loginPass').value
+  const err = document.getElementById('loginError')
+
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass })
+  })
+  const data = await res.json()
+  if (data.token) {
+    sessionToken = data.token
+    localStorage.setItem('wa_relay_token', sessionToken)
+    showScreen('app')
+    startApp()
+  } else {
+    err.textContent = data.error || 'Senha incorreta'
+    document.getElementById('loginPass').value = ''
+    document.getElementById('loginPass').focus()
+  }
+}
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/auth/logout', { method: 'POST', headers: authHeaders() })
+  sessionToken = null
+  localStorage.removeItem('wa_relay_token')
+  showScreen('login')
+})
+
+// ─── Main App ───────────────────────────────────────
 const uploadArea = document.getElementById('uploadArea')
 const fileInput = document.getElementById('fileInput')
 const preview = document.getElementById('preview')
@@ -219,21 +405,28 @@ const historyList = document.getElementById('historyList')
 
 let selectedFile = null
 let connected = false
+let statusInterval = null
 
-// Poll status
-async function checkStatus() {
+function startApp() {
+  if (statusInterval) clearInterval(statusInterval)
+  statusInterval = setInterval(checkWAStatus, 2000)
+  checkWAStatus()
+}
+
+async function checkWAStatus() {
   try {
-    const res = await fetch('/api/status')
+    const res = await fetch('/api/status', { headers: authHeaders() })
+    if (res.status === 401) { showScreen('login'); return }
     const data = await res.json()
     connected = data.connected
-    
+
     statusDot.className = `status-dot ${connected ? 'connected' : ''}`
-    statusText.textContent = connected 
-      ? `Conectado: ${data.jid?.split('@')[0] || '?'}` 
+    statusText.textContent = connected
+      ? `Conectado: ${data.jid?.split('@')[0] || '?'}`
       : 'Aguardando conexão...'
-    
+
     uploadArea.classList.toggle('disabled', !connected)
-    
+
     if (!connected && data.qr) {
       qrContainer.style.display = 'block'
       qrImg.src = data.qr
@@ -244,9 +437,6 @@ async function checkStatus() {
     statusText.textContent = 'Servidor offline'
   }
 }
-
-setInterval(checkStatus, 2000)
-checkStatus()
 
 // Upload area
 uploadArea.addEventListener('click', () => fileInput.click())
@@ -259,7 +449,6 @@ uploadArea.addEventListener('drop', e => {
 })
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]) })
 
-// Paste support (Ctrl+V / Cmd+V)
 document.addEventListener('paste', e => {
   if (!connected) return
   const items = e.clipboardData?.items
@@ -267,8 +456,7 @@ document.addEventListener('paste', e => {
   for (const item of items) {
     if (item.kind === 'file') {
       e.preventDefault()
-      const file = item.getAsFile()
-      if (file) handleFile(file)
+      handleFile(item.getAsFile())
       return
     }
   }
@@ -279,10 +467,9 @@ function getFileIcon(type, name) {
   if (type.startsWith('video/')) return '🎬'
   if (type.startsWith('audio/')) return '🎵'
   if (type === 'application/pdf') return '📕'
-  if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gz')) return '📦'
-  if (type.includes('word') || name?.endsWith('.doc') || name?.endsWith('.docx')) return '📝'
-  if (type.includes('sheet') || type.includes('excel') || name?.endsWith('.xls') || name?.endsWith('.xlsx')) return '📊'
-  if (type.includes('presentation') || name?.endsWith('.ppt') || name?.endsWith('.pptx')) return '📽️'
+  if (type.includes('zip') || type.includes('rar')) return '📦'
+  if (type.includes('word') || name?.endsWith('.docx')) return '📝'
+  if (type.includes('sheet') || name?.endsWith('.xlsx')) return '📊'
   return '📄'
 }
 
@@ -296,7 +483,7 @@ function handleFile(file) {
   selectedFile = file
   preview.style.display = 'block'
   sendBtn.style.display = 'block'
-  
+
   if (file.type.startsWith('image/')) {
     preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="preview">`
   } else if (file.type.startsWith('video/')) {
@@ -308,21 +495,25 @@ function handleFile(file) {
   }
 }
 
-// Send
 sendBtn.addEventListener('click', async () => {
   if (!selectedFile || !connected) return
-  
+
   sendBtn.disabled = true
   sendBtn.textContent = '⏳ Enviando...'
-  
+
   const form = new FormData()
   form.append('file', selectedFile)
   form.append('caption', captionInput.value)
-  
+
   try {
-    const res = await fetch('/api/send', { method: 'POST', body: form })
+    const res = await fetch('/api/send', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: form
+    })
+    if (res.status === 401) { showScreen('login'); return }
     const data = await res.json()
-    
+
     if (data.success) {
       showToast('✅ Enviado!', 'success')
       addHistory(selectedFile)
@@ -337,7 +528,7 @@ sendBtn.addEventListener('click', async () => {
   } catch (e) {
     showToast(`❌ ${e.message}`, 'error')
   }
-  
+
   sendBtn.disabled = false
   sendBtn.textContent = '📤 Enviar pro WhatsApp'
 })
@@ -346,11 +537,11 @@ function addHistory(file) {
   historyDiv.style.display = 'block'
   const item = document.createElement('div')
   item.className = 'history-item'
-  
-  const thumb = file.type.startsWith('image/') 
-    ? `<img src="${URL.createObjectURL(file)}" alt="">` 
+
+  const thumb = file.type.startsWith('image/')
+    ? `<img src="${URL.createObjectURL(file)}" alt="">`
     : `<div style="width:48px;height:48px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">${getFileIcon(file.type, file.name)}</div>`
-  
+
   item.innerHTML = `
     ${thumb}
     <div class="info">
@@ -368,6 +559,9 @@ function showToast(msg, type) {
   toast.className = `toast ${type} show`
   setTimeout(() => toast.classList.remove('show'), 3000)
 }
+
+// ─── Init ───────────────────────────────────────────
+checkAuth()
 </script>
 </body>
 </html>
